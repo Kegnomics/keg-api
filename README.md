@@ -9,5 +9,26 @@ This serves the following purposes:
 
 ## API Design
 
-Root: `/api`
-Pubmed queries: `/api/pubmed`
+* Root: `/api`
+* Pubmed queries:
+    - `GET /api/pubmed`.
+    - Required params: 'keywords' (comma separated strings).
+    - Optional params: 'maxres' (int)
+    - Example: `/api/pubmed?keywords=cleft,palate&maxres=2`
+
+
+
+### Fields
+
+#### 1. Variants API
+
+* id (rsid)
+* locus
+* outcome (benign, possibly pathogenic)
+* fenotype
+* frequency
+* SIFT score
+* polyphene score
+* gene
+
+
