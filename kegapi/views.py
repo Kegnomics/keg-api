@@ -5,7 +5,7 @@ import tempfile
 from werkzeug.utils import redirect, secure_filename
 
 from kegapi.app import app, db
-from kegapi.models import JobRun
+from kegapi.models import JobRun, populate_pubmed_data, populate_variant_data
 from kegapi.constants import ALLOWED_EXTENSIONS
 from kegapi.pubmed import pubmed_api
 from flask import request, jsonify, flash
@@ -98,12 +98,34 @@ def jobs_index():
 @app.route('/api/test-trigger', methods=['GET'])
 def trigger_dag_test():
     config = {
-        'job_id': 123,
-        'user_id': 1,
+        'job_id': 1,
+        'user_id': 123,
         'file_path': '/home/cristi/Documents/hacktm/J2_S2.vcf',
-        'keywords': ['breast', 'cancer']
+        'keywords': ['breast', 'cancer'],
+        'end_url': 'http://localhost:5000/api/end_job_run'
     }
 
     print(trigger_airflow_job(config))
 
     return jsonify({'job_result': 'started'})
+
+
+@app.route('/api/end_job_run', methods=['POST'])
+def end_job_run():
+    """
+    End the job and create all instances in the db
+    :return:
+    """
+
+    request_data = json.loads(request.data)
+    job_id = request_data.get('job_id')
+    user_id = request_data.get('user_id')
+    pubmed_data = request_data.get('pubmed')
+    filtered_variants = request_data.get('variants')
+
+    job = JobRun.query.filter_by(id=job_id, user_id=user_id).first()
+
+    populate_variant_data(job, filtered_variants)
+    populate_pubmed_data(job, pubmed_data)
+    job.done = 1
+    db.session.commit()

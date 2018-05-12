@@ -1,6 +1,7 @@
 import requests
 import json
 
+
 class VcfApi(object):
 
     def __init__(self, base_url='http://35.185.51.127:8080'):
@@ -17,33 +18,35 @@ class VcfApi(object):
         r = requests.post(self.upload_url, files=file_payload)
         return r.json()
 
+    @staticmethod
+    def filter(variants):
+        for i in range(len(variants["data"]) - 1, -1, -1):
+            exonicFunc = variants["data"][i].get("info").get("ExonicFunc.refGene")
+            if exonicFunc and str(exonicFunc) == "synonymous_SNV":
+                del variants["data"][i]
+                continue
 
-def filter(variants):
-    for i in range(len(variants["data"])- 1, -1, -1):
-        exonicFunc = variants["data"][i].get("info").get("ExonicFunc.refGene")
-        if exonicFunc and str(exonicFunc) == "synonymous_SNV":
-            del variants["data"][i]
-            continue
+            frequency = variants["data"][i].get("info").get("ExAC_ALL")
+            if frequency and float(frequency) > 0.01:
+                del variants["data"][i]
+                continue
 
-        frequency = variants["data"][i].get("info").get("ExAC_ALL")
-        if frequency and float(frequency) > 0.01:
-            del variants["data"][i]
-            continue
+            fathmm_score = variants["data"][i].get("info").get("FATHMM_score")
+            if fathmm_score and float(fathmm_score) > 1:
+                del variants["data"][i]
+                continue
 
-        fathmm_score = variants["data"][i].get("info").get("FATHMM_score")
-        if fathmm_score and float(fathmm_score) > 1:
-            del variants["data"][i]
-            continue
+            gerp_score = variants["data"][i].get("info").get("GERP++_RS")
+            if gerp_score and float(gerp_score) < 0:
+                del variants["data"][i]
+                continue
 
-        gerp_score = variants["data"][i].get("info").get("GERP++_RS")
-        if gerp_score and float(gerp_score) < 0:
-            del variants["data"][i]
-            continue
+        return variants
 
-    return variants
 
 if __name__ == '__main__':
     from pprint import pprint
+
     vcf_api = VcfApi()
     results = vcf_api.upload_file('/home/sushii/Desktop/J26_S2.vcf')
     # simulate response for faster debugging

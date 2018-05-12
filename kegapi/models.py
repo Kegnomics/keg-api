@@ -1,3 +1,5 @@
+import json
+
 from kegapi.app import db
 
 
@@ -41,7 +43,15 @@ class Variant(db.Model):
 
     @staticmethod
     def serialize_json(obj):
-        return ''
+        return {
+            'id': obj.id,
+            'rsid': obj.rsid,
+            'locus': obj.locus,
+            'outcome': obj.outcome,
+            'phenotype': obj.phenotype,
+            'polyphen': obj.polyphene,
+            'sift': obj.sift
+        }
 
 
 class PubMedArticle(db.Model):
@@ -58,7 +68,34 @@ class PubMedArticle(db.Model):
 
     @staticmethod
     def serialize_json(obj):
-        return ''
+        return {
+            'id': obj.id,
+            'url': obj.url,
+            'summary': json.loads(obj.summary)
+        }
+
+
+def populate_pubmed_data(job, pubmed_data):
+    for data in pubmed_data:
+        summary_str = json.dumps(data['summary'])
+        url = data['url']
+        db.session.add(PubMedArticle(
+            run_id=job.id,
+            summary=summary_str,
+            url=url
+        ))
+    db.session.commit()
+
+
+def populate_variant_data(job, variant_data):
+    for data in variant_data['data']:
+        db.session.add(
+            Variant(
+                run_id=job.id,
+                sift=data.get('SIFT_score')
+            )
+        )
+    db.session.commit()
 
 
 if __name__ == '__main__':

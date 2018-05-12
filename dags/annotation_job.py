@@ -4,13 +4,12 @@ https://github.com/airbnb/airflow/blob/master/airflow/example_dags/annotation_jo
 """
 from __future__ import absolute_import
 
-import json, logging
-
-from airflow import DAG
-from airflow.api.common.experimental.trigger_dag import trigger_dag
-from airflow.operators.bash_operator import BashOperator
-from airflow.operators.python_operator import PythonOperator
+import logging
 from datetime import datetime, timedelta
+
+import requests
+from airflow import DAG
+from airflow.operators.python_operator import PythonOperator
 
 from kegapi.pubmed import pubmed_api
 from kegapi.vcf import VcfApi
@@ -50,8 +49,7 @@ def filter_vcf(**context):
     results = context['ti'].xcom_pull(key=None, task_ids='annotate_vcf')
     logging.info('Results in filter_vcf: {}'.format(results))
 
-    # TODO actually filter
-    filtered_results = results
+    filtered_results = VcfApi.filter(results)
     logging.info('Successfully pushed filtered results')
     return filtered_results
 
@@ -71,10 +69,32 @@ def filtered_results_keyword_search(**context):
 
 def write_results_to_db(**context):
     # TODO actually write
+    filtered_variants = context['ti'].xcom_pull(key=None, task_ids='filter_vcf')
+    pubmed_results = context['ti'].xcom_pull(key=None, task_ids='pubmed_nlp_task')
+
+    # db_path = '/home/cristi/Documents/hacktm/'
+    #
+    # with open(db_path + 'filtered_vars.p', 'wb') as f:
+    #     pickle.dump(filtered_variants, f)
+    #
+    # with open(db_path + 'pubmed_results.p', 'wb') as f:
+    #     pickle.dump(pubmed_results, f)
+    my_dag_run = context['dag_run']
+    config = my_dag_run.conf
+    request_data = {
+        'job_id': config['job_id'],
+        'user_id': config['user_id'],
+        'variants': filtered_variants,
+        'pubmed': pubmed_results,
+    }
+
+    resp = requests.post(config['end_url'], json=request_data)
+    if resp == 200:
+        print('All ok writing the crap')
     return 'done writing'
 
 
-### Job definition
+# Job definition
 dag = DAG('annotation_job', default_args=default_args)
 
 # do the annotations now
