@@ -59,6 +59,7 @@ class PubMedArticle(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     url = db.Column(db.String(500))
     summary = db.Column(db.Text)
+    abstract = db.Column(db.Text)
 
     run_id = db.Column(db.Integer, db.ForeignKey('jobrun.id'),
                        nullable=False)
@@ -81,6 +82,7 @@ def populate_pubmed_data(job, pubmed_data):
         url = data['url']
         db.session.add(PubMedArticle(
             run_id=job.id,
+            abstract = data['abstract'],
             summary=summary_str,
             url=url
         ))

@@ -129,3 +129,5 @@ def end_job_run():
     populate_pubmed_data(job, pubmed_data)
     job.done = 1
     db.session.commit()
+
+    return jsonify({'status': 'ok'})
