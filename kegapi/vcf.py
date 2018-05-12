@@ -48,12 +48,16 @@ if __name__ == '__main__':
     from pprint import pprint
 
     vcf_api = VcfApi()
-    results = vcf_api.upload_file('/home/sushii/Desktop/J26_S2.vcf')
-    # simulate response for faster debugging
-    # json_data = open('/home/sushii/Desktop/testResponse.json').read()
-    # results = json.loads(json_data)
+    results = vcf_api.upload_file('/home/sushii/Desktop/P22_S10.vcf')
+    print("Variants before filtering: " + str(len(results["data"])))
+
+    obj = open('/home/sushii/Desktop/unfilteredVariants.json', 'wb')
+    obj.write(json.dumps(results))
+    obj.close()
+
+
     filteredResults = filter(results)
-    print(len(filteredResults["data"]))
+    print("Variants after filtering: " + str(len(filteredResults["data"])))
 
     obj = open('/home/sushii/Desktop/filteredVariants.json', 'wb')
     obj.write(json.dumps(filteredResults))
