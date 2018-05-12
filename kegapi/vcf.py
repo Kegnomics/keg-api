@@ -3,7 +3,7 @@ import requests
 
 class VcfApi(object):
 
-    def __init__(self, base_url='http://10.10.1.33:8080'):
+    def __init__(self, base_url='http://35.185.51.127:8080'):
         self.upload_url = base_url + '/handleFileUpload'
 
     def upload_file(self, file_path):

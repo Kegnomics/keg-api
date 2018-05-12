@@ -18,6 +18,7 @@ class JobRun(db.Model):
             'id': obj.id,
             'user_id': obj.user_id,
             'timestamp': obj.timestamp,
+            'done': obj.done,
             'variants': [Variant.serialize_json(v) for v in obj.variants],
             'pubmedarticles': [PubMedArticle.serialize_json(a) for a in obj.pubmedarticles]
         }
