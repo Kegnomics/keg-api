@@ -70,7 +70,8 @@ def initial_upload():
         'job_run': job.id,
         'user_id': job.user_id,
         'file_path': file_path,
-        'keywords': keywords
+        'keywords': keywords,
+        'end_url': 'http://localhost:5000/api/end_job_run'
     }
     trigger_airflow_job(config)
 
