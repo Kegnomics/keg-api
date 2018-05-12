@@ -1,4 +1,4 @@
-from kegapi import db
+from kegapi.app import db
 
 
 class JobRun(db.Model):
@@ -27,7 +27,7 @@ class JobRun(db.Model):
 class Variant(db.Model):
     __tablename__ = 'variant'
     id = db.Column(db.Integer, primary_key=True)
-    rsid = db.Column(db.Integer, nullable=True)
+    rsid = db.Column(db.String(500), nullable=True)
 
     locus = db.Column(db.String(500))
     outcome = db.Column(db.String(500))
