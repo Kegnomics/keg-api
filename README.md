@@ -55,7 +55,7 @@ This serves the following purposes:
         }
       ```
 
-      - Response for one job: `/api/jobs?user_id=123&job_id=1`
+      - Response for one job: `/api/jobs?user_id=123&job_id=1`:
       - ```
       {
         job: {
