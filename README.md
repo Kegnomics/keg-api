@@ -15,6 +15,12 @@ This serves the following purposes:
     - Required params: 'keywords' (comma separated strings).
     - Optional params: 'maxres' (int)
     - Example: `/api/pubmed?keywords=cleft,palate&maxres=2`
+* Initial vcf upload:
+    - `POST /api/upload`.
+    - Required params:
+        - 'file' (attached multipart form).
+    - Example: `/api/upload`
+
 
 
 

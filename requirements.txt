@@ -2,3 +2,7 @@ Flask
 requests
 flask-sqlalchemy
 Flask-API
+redis
+celery
+apache-airflow[redis]
+flask-cors
