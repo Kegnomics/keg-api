@@ -58,7 +58,10 @@ def pubmed_nlp_job(**context):
     results = context['ti'].xcom_pull(key=None, task_ids='filter_vcf')
     keywords = context['dag_run'].conf['keywords']
 
-    return pubmed_api.get_by_keywords(keywords)
+    if keywords:
+        return pubmed_api.get_by_keywords(keywords)
+    else:
+        return []
 
 
 def filtered_results_keyword_search(**context):

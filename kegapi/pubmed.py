@@ -52,7 +52,9 @@ class PubMed(object):
         })
         logging.info('Getting: {}'.format(uri))
         json_resp = get_json_or_err(requests.get(uri))
-        ids = json_resp['esearchresult']['idlist']
+        ids = json_resp['esearchresult'].get('idlist')
+        if not ids:
+            return []
         articles = [{'abstract': self.get_abstract_from_efetch(id), 'summary': self.get_summary_from_id(id)} for id in
                     ids]
 

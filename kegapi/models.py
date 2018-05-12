@@ -9,6 +9,7 @@ class JobRun(db.Model):
     user_id = db.Column(db.Integer)
     timestamp = db.Column(db.DateTime, server_default=db.func.now(), server_onupdate=db.func.now())
     done = db.Column(db.Integer, nullable=False)
+    runname = db.Column(db.String(500))
     variants = db.relationship('Variant',
                                backref=db.backref('pubmedarticles', lazy=True))
     pubmedarticles = db.relationship('PubMedArticle',
@@ -18,6 +19,7 @@ class JobRun(db.Model):
     def serialize_json(obj):
         return {
             'id': obj.id,
+            'runname': obj.runname,
             'user_id': obj.user_id,
             'timestamp': obj.timestamp,
             'done': obj.done,
@@ -69,10 +71,12 @@ class PubMedArticle(db.Model):
 
     @staticmethod
     def serialize_json(obj):
+        abstract = obj.abstract if hasattr(obj, 'abstract') else ''
         return {
             'id': obj.id,
             'url': obj.url,
-            'summary': json.loads(obj.summary)
+            'summary': json.loads(obj.summary),
+            'abstract': abstract
         }
 
 
@@ -82,7 +86,7 @@ def populate_pubmed_data(job, pubmed_data):
         url = data['url']
         db.session.add(PubMedArticle(
             run_id=job.id,
-            abstract = data['abstract'],
+            abstract=data['abstract'],
             summary=summary_str,
             url=url
         ))

@@ -34,16 +34,13 @@ def pubmed_keywords():
         return jsonify({'error': 'Invalid arguments. Required: keywords (comma separated list)'}), 400
 
 
-def allowed_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
 
 @app.route('/api/upload', methods=['POST'])
 def initial_upload():
     file = request.files['vcf']
     keywords = json.loads(request.form['keywords'])
     user_id = request.form['user_id']
+    runname = request.form['runName']
     print('KW: {}'.format(keywords))
     print('user: {}'.format(user_id))
 
@@ -55,19 +52,19 @@ def initial_upload():
 
     filename = secure_filename(file.filename)
     file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-    if file and allowed_file(file.filename):
+    if file:
         file.save(file_path)
     else:
         return jsonify({'error': 'Invalid file!'}), 400
 
-    job = JobRun(user_id=user_id, done=0)
+    job = JobRun(user_id=user_id, runname=runname, done=0)
 
     db.session.add(job)
     db.session.commit()
 
     # Start the airflow job
     config = {
-        'job_run': job.id,
+        'job_id': job.id,
         'user_id': job.user_id,
         'file_path': file_path,
         'keywords': keywords,
