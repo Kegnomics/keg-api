@@ -56,7 +56,7 @@ if __name__ == '__main__':
     obj.close()
 
 
-    filteredResults = filter(results)
+    filteredResults = vcf_api.filter(results)
     print("Variants after filtering: " + str(len(filteredResults["data"])))
 
     obj = open('/home/sushii/Desktop/filteredVariants.json', 'wb')
