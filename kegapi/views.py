@@ -67,7 +67,7 @@ def jobs_index():
     job_id = request.args.get('job_id')
     user_id = request.args.get('user_id')
     if not user_id:
-        return {'error': 'Must include user_id in params'}, 400
+        return jsonify({'error': 'Must include user_id in params'}), 400
     if job_id:
         job_id = int(job_id)
         job = JobRun.query.filter_by(id=job_id, user_id=user_id)
