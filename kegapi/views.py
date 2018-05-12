@@ -4,11 +4,12 @@ import tempfile
 
 from werkzeug.utils import redirect, secure_filename
 
-from kegapi import app, db
+from kegapi.app import app, db
 from kegapi.models import JobRun
 from kegapi.constants import ALLOWED_EXTENSIONS
 from kegapi.pubmed import pubmed_api
 from flask import request, jsonify, flash
+from kegapi.pipeline_operations import trigger_airflow_job
 
 
 @app.route('/')
@@ -41,9 +42,9 @@ def allowed_file(filename):
 @app.route('/api/upload', methods=['POST'])
 def initial_upload():
     file = request.files['vcf']
-    form = json.loads(request.form['keywords'])
+    keywords = json.loads(request.form['keywords'])
     user_id = request.form['user_id']
-    print('KW: {}'.format(form))
+    print('KW: {}'.format(keywords))
     print('user: {}'.format(user_id))
 
     # if user does not select file, browser also
@@ -51,14 +52,28 @@ def initial_upload():
     if file.filename == '':
         flash('No selected file')
         return redirect(request.url)
+
+    filename = secure_filename(file.filename)
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     if file and allowed_file(file.filename):
-        filename = secure_filename(file.filename)
-        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        file.save(file_path)
+    else:
+        return jsonify({'error': 'Invalid file!'}), 400
 
     job = JobRun(user_id=user_id, done=0)
 
     db.session.add(job)
     db.session.commit()
+
+    # Start the airflow job
+    config = {
+        'job_run': job.id,
+        'user_id': job.user_id,
+        'file_path': file_path,
+        'keywords': keywords
+    }
+    trigger_airflow_job(config)
+
     return jsonify({'job_id': job.id})
 
 
@@ -77,5 +92,18 @@ def jobs_index():
         return jsonify({'job': JobRun.serialize_json(job.first())})
     else:
         all_res = [JobRun.serialize_json(obj) for obj in JobRun.query.filter_by(user_id=user_id)]
-        print('All res: {}'.format(all_res))
         return jsonify({'results': all_res})
+
+
+@app.route('/api/test-trigger', methods=['GET'])
+def trigger_dag_test():
+    config = {
+        'job_id': 123,
+        'user_id': 1,
+        'file_path': '/home/cristi/Documents/hacktm/J2_S2.vcf',
+        'keywords': ['breast', 'cancer']
+    }
+
+    print(trigger_airflow_job(config))
+
+    return jsonify({'job_result': 'started'})
