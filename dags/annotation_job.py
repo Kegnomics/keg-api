@@ -3,6 +3,7 @@ Code that goes along with the Airflow tutorial located at:
 https://github.com/airbnb/airflow/blob/master/airflow/example_dags/annotation_job.py
 """
 from airflow import DAG
+from airflow.api.common.experimental.trigger_dag import trigger_dag
 from airflow.operators.bash_operator import BashOperator
 from datetime import datetime, timedelta
 
@@ -62,4 +63,4 @@ t3.set_upstream(t4)
 
 
 if __name__ == '__main__':
-    dag.run()
+    trigger_dag('annotation_job')

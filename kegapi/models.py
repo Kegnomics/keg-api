@@ -6,10 +6,21 @@ class JobRun(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer)
     timestamp = db.Column(db.DateTime, server_default=db.func.now(), server_onupdate=db.func.now())
+    done = db.Column(db.Integer, nullable=False)
     variants = db.relationship('Variant',
                                backref=db.backref('pubmedarticles', lazy=True))
     pubmedarticles = db.relationship('PubMedArticle',
                                      backref=db.backref('variant', lazy=True))
+
+    @staticmethod
+    def serialize_json(obj):
+        return {
+            'id': obj.id,
+            'user_id': obj.user_id,
+            'timestamp': obj.timestamp,
+            'variants': [Variant.serialize_json(v) for v in obj.variants],
+            'pubmedarticles': [PubMedArticle.serialize_json(a) for a in obj.pubmedarticles]
+        }
 
 
 class Variant(db.Model):
@@ -27,6 +38,10 @@ class Variant(db.Model):
     run_id = db.Column(db.Integer, db.ForeignKey('jobrun.id'),
                        nullable=False)
 
+    @staticmethod
+    def serialize_json(obj):
+        return ''
+
 
 class PubMedArticle(db.Model):
     __tablename__ = 'pubmedarticle'
@@ -39,6 +54,10 @@ class PubMedArticle(db.Model):
 
     def __repr__(self):
         return '<PubMedArticle {}>'.format(self.url)
+
+    @staticmethod
+    def serialize_json(obj):
+        return ''
 
 
 if __name__ == '__main__':
