@@ -1,6 +1,8 @@
 import json
 
+import re
 from kegapi.app import db
+from kegapi.constants import CLINVAR_GROUP_REGEX
 
 
 class JobRun(db.Model):
@@ -31,14 +33,14 @@ class JobRun(db.Model):
 class Variant(db.Model):
     __tablename__ = 'variant'
     id = db.Column(db.Integer, primary_key=True)
-    rsid = db.Column(db.String(500), nullable=True)
+    rsid = db.Column(db.String(500), nullable=True)  # ID
 
-    locus = db.Column(db.String(500))
-    outcome = db.Column(db.String(500))
-    phenotype = db.Column(db.String(500))
-    frequency = db.Column(db.Integer)
-    polyphene = db.Column(db.Float)
-    sift = db.Column(db.Float)
+    locus = db.Column(db.String(500))  # chromosome, position
+    outcome = db.Column(db.String(500))  # ?????
+    phenotype = db.Column(db.String(500))  # ??????
+    frequency = db.Column(db.Integer)  # ExAC_ALL
+    polyphene = db.Column(db.Float)  # Polyphene2_....ceva
+    sift = db.Column(db.Float)  # SIFT_score
 
     run_id = db.Column(db.Integer, db.ForeignKey('jobrun.id'),
                        nullable=False)
@@ -93,12 +95,73 @@ def populate_pubmed_data(job, pubmed_data):
     db.session.commit()
 
 
+def extract_clinvar_data(text):
+    """
+    Get some text, extract clinvar format crap.
+    First thing = outcome
+    Second thing = fenotype
+    :param text: clinvar column text
+    :return: a list of matches
+    """
+    # Left for reference
+    # text = 'CLINSIG\\\\x3dprobable-non-pathogenic|non-pathogenic\\\\x3bCLNDBN\\\\x3dCardiomyopathy|' \
+    #        'AllHighlyPenetrant\\\\x3bCLNACC\\\\x3dRCV000029674.1|RCV000037982.1'
+    # ['CLINSIG', 'x3dpathogenic', 'x3bCLNDBN', 'x3dHypothyroidism', 'x2c_congenital', 'x2c_nongoitrous', 'x2c_5', 'x3bCLNACC', 'x3dRCV000009584.1']
+
+    groups = []
+    split_articles = text.split('\\')
+    cl_index = -1
+    cldb_index = -1
+    for article_ind in range(len(split_articles)):
+        article = split_articles[article_ind]
+        if article.startswith('x'):
+            article = article[3:]
+        if 'CLINSIG' in article:
+            cl_index = article_ind
+        if 'CLNDBN' in article:
+            cldb_index = article_ind
+
+    outcome = None
+    phenotype = None
+
+    if cl_index != -1:
+        cl_group = []
+        cl_index += 1
+        while (not 'CL' in split_articles[cl_index]) and (cl_index < len(split_articles)):
+            cl_group.append(split_articles[cl_index][3:])
+            cl_index += 1
+        outcome = ' '.join(cl_group)
+
+    if cldb_index != -1:
+        cl_group = []
+        cldb_index += 1
+        while (not 'CL' in split_articles[cldb_index]) and (cldb_index < len(split_articles)):
+            cl_group.append(split_articles[cldb_index][3:])
+            cldb_index += 1
+        phenotype = ','.join(cl_group)
+
+    return outcome, phenotype
+
+
 def populate_variant_data(job, variant_data):
     for data in variant_data['data']:
+        clinvar_text = data.get('info').get('clinvar_20140211')
+        outcome, phenotype = None, None
+        if clinvar_text:
+            outcome, phenotype = extract_clinvar_data(clinvar_text)
+
+        locus = None
+        if data.get('chromosome') and data.get('position'):
+            locus = data.get('chromosome') + ',' + str(data.get('position'))
         db.session.add(
             Variant(
                 run_id=job.id,
-                sift=data.get('SIFT_score')
+                rsid=data.get('ID'),
+                sift=data.get('info').get('SIFT_score'),
+                polyphene=data.get('info').get('Polyphen2_HVAR_score'),
+                phenotype=phenotype,
+                outcome=outcome,
+                locus=locus
             )
         )
     db.session.commit()

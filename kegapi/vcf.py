@@ -4,7 +4,7 @@ import json
 
 class VcfApi(object):
 
-    def __init__(self, base_url='http://35.185.51.127:8080'):
+    def __init__(self, base_url='http://104.196.163.147:8080'):
         self.upload_url = base_url + '/handleFileUpload'
 
     def upload_file(self, file_path):
@@ -48,17 +48,19 @@ if __name__ == '__main__':
     from pprint import pprint
 
     vcf_api = VcfApi()
-    results = vcf_api.upload_file('/home/sushii/Desktop/P22_S10.vcf')
+    results = vcf_api.upload_file('/home/cristi/Documents/hacktm/J2_S2.vcf')
     print("Variants before filtering: " + str(len(results["data"])))
 
-    obj = open('/home/sushii/Desktop/unfilteredVariants.json', 'wb')
-    obj.write(json.dumps(results))
-    obj.close()
-
-
-    filteredResults = vcf_api.filter(results)
-    print("Variants after filtering: " + str(len(filteredResults["data"])))
-
-    obj = open('/home/sushii/Desktop/filteredVariants.json', 'wb')
-    obj.write(json.dumps(filteredResults))
-    obj.close()
+    pprint(results)
+    #
+    # obj = open('/home/sushii/Desktop/unfilteredVariants.json', 'wb')
+    # obj.write(json.dumps(results))
+    # obj.close()
+    #
+    #
+    # filteredResults = vcf_api.filter(results)
+    # print("Variants after filtering: " + str(len(filteredResults["data"])))
+    #
+    # obj = open('/home/sushii/Desktop/filteredVariants.json', 'wb')
+    # obj.write(json.dumps(filteredResults))
+    # obj.close()
