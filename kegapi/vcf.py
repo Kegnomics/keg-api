@@ -1,5 +1,5 @@
 import requests
-
+import json
 
 class VcfApi(object):
 
@@ -18,7 +18,40 @@ class VcfApi(object):
         return r.json()
 
 
+def filter(variants):
+    for i in range(len(variants["data"])- 1, -1, -1):
+        exonicFunc = variants["data"][i].get("info").get("ExonicFunc.refGene")
+        if exonicFunc and str(exonicFunc) == "synonymous_SNV":
+            del variants["data"][i]
+            continue
+
+        frequency = variants["data"][i].get("info").get("ExAC_ALL")
+        if frequency and float(frequency) > 0.01:
+            del variants["data"][i]
+            continue
+
+        fathmm_score = variants["data"][i].get("info").get("FATHMM_score")
+        if fathmm_score and float(fathmm_score) > 1:
+            del variants["data"][i]
+            continue
+
+        gerp_score = variants["data"][i].get("info").get("GERP++_RS")
+        if gerp_score and float(gerp_score) < 0:
+            del variants["data"][i]
+            continue
+
+    return variants
+
 if __name__ == '__main__':
     from pprint import pprint
     vcf_api = VcfApi()
-    pprint(vcf_api.upload_file('/home/cristi/Documents/Desktop/J2_S2.vcf'))
+    results = vcf_api.upload_file('/home/sushii/Desktop/J26_S2.vcf')
+    # simulate response for faster debugging
+    # json_data = open('/home/sushii/Desktop/testResponse.json').read()
+    # results = json.loads(json_data)
+    filteredResults = filter(results)
+    print(len(filteredResults["data"]))
+
+    obj = open('/home/sushii/Desktop/filteredVariants.json', 'wb')
+    obj.write(json.dumps(filteredResults))
+    obj.close()
