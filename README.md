@@ -68,6 +68,14 @@ This serves the following purposes:
       }
       ```
 
+* Most common words in abstracts: NLTK
+
+   - api: `GET /api/stats/commonWords?user_id=1337&job_id=38`
+   - return:
+        ```
+
+        ```
+
 
 
 ### Fields

@@ -20,3 +20,5 @@ import kegapi.models
 import kegapi.views
 
 db.create_all()
+
+

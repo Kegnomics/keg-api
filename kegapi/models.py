@@ -16,6 +16,8 @@ class JobRun(db.Model):
                                backref=db.backref('pubmedarticles', lazy=True))
     pubmedarticles = db.relationship('PubMedArticle',
                                      backref=db.backref('variant', lazy=True))
+    genecounts = db.relationship('GeneCounts',
+                                 backref=db.backref('genecounts', lazy=True))
 
     @staticmethod
     def serialize_json(obj):
@@ -26,7 +28,8 @@ class JobRun(db.Model):
             'timestamp': obj.timestamp,
             'done': obj.done,
             'variants': [Variant.serialize_json(v) for v in obj.variants],
-            'pubmedarticles': [PubMedArticle.serialize_json(a) for a in obj.pubmedarticles]
+            'pubmedarticles': [PubMedArticle.serialize_json(a) for a in obj.pubmedarticles],
+            'genecounts': [GeneCounts.serialize_json(obj) for obj in obj.genecounts]
         }
 
 
@@ -41,6 +44,8 @@ class Variant(db.Model):
     frequency = db.Column(db.Integer)  # ExAC_ALL
     polyphene = db.Column(db.Float)  # Polyphene2_....ceva
     sift = db.Column(db.Float)  # SIFT_score
+    gene = db.Column(db.String(500))  #
+    mutation_type = db.Column(db.String(500))  # ExonicSomething
 
     run_id = db.Column(db.Integer, db.ForeignKey('jobrun.id'),
                        nullable=False)
@@ -54,7 +59,9 @@ class Variant(db.Model):
             'outcome': obj.outcome,
             'phenotype': obj.phenotype,
             'polyphen': obj.polyphene,
-            'sift': obj.sift
+            'sift': obj.sift,
+            'gene': obj.gene,
+            'mutation_type': obj.mutation_type
         }
 
 
@@ -82,6 +89,27 @@ class PubMedArticle(db.Model):
         }
 
 
+class GeneCounts(db.Model):
+    __tablename__ = 'genecounts'
+    id = db.Column(db.Integer, primary_key=True)
+    gene = db.Column(db.String(500))
+    count = db.Column(db.Integer)
+
+    run_id = db.Column(db.Integer, db.ForeignKey('jobrun.id'),
+                       nullable=False)
+
+    def __repr__(self):
+        return '<GeneCounts {}>'.format(self.count)
+
+    @staticmethod
+    def serialize_json(obj):
+        return {
+            'id': obj.id,
+            'gene': obj.gene,
+            'count': obj.count
+        }
+
+
 def populate_pubmed_data(job, pubmed_data):
     for data in pubmed_data:
         summary_str = json.dumps(data['summary'])
@@ -91,6 +119,16 @@ def populate_pubmed_data(job, pubmed_data):
             abstract=data['abstract'],
             summary=summary_str,
             url=url
+        ))
+    db.session.commit()
+
+
+def populate_gene_count(job, gene_counts):
+    for k, data in gene_counts.items():
+        db.session.add(GeneCounts(
+            run_id=job.id,
+            gene=k,
+            count=int(data)
         ))
     db.session.commit()
 
@@ -161,7 +199,9 @@ def populate_variant_data(job, variant_data):
                 polyphene=data.get('info').get('Polyphen2_HVAR_score'),
                 phenotype=phenotype,
                 outcome=outcome,
-                locus=locus
+                locus=locus,
+                gene=data.get('info').get('Gene.refGene'),
+                mutation_type=data.get('info').get('ExonicFunc.refGene')
             )
         )
     db.session.commit()

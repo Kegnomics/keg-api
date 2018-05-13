@@ -11,6 +11,7 @@ import requests
 from airflow import DAG
 from airflow.operators.python_operator import PythonOperator
 
+from kegapi.classifiers import build_dataframes
 from kegapi.pubmed import pubmed_api
 from kegapi.vcf import VcfApi
 
@@ -64,16 +65,38 @@ def pubmed_nlp_job(**context):
         return []
 
 
-def filtered_results_keyword_search(**context):
-    results = context['ti'].xcom_pull(key=None, task_ids='filter_vcf')
-    # TODO do the search here
-    return 'end'
+def create_variant_barchart(**context):
+    results = context['ti'].xcom_pull(key=None, task_ids='annotate_vcf')
+    counts = {}
+    for res in results['data']:
+        gene = res.get('info').get('Gene.refGene')
+        if gene in counts:
+            counts[gene] += 1
+        else:
+            counts[gene] = 1
+    return counts
+
+
+def clustering_task(**context):
+    my_dag_run = context['dag_run']
+    config = my_dag_run.conf
+
+    build_dataframes(
+        [
+            config['file_path'],
+        ],
+        out_path='/home/cristi/Documents/hacktm/pca_graph.png'
+    )
+    # TODO do the clustering and display here
+
+    return 'done clustering'
 
 
 def write_results_to_db(**context):
     # TODO actually write
     filtered_variants = context['ti'].xcom_pull(key=None, task_ids='filter_vcf')
     pubmed_results = context['ti'].xcom_pull(key=None, task_ids='pubmed_nlp_task')
+    gene_counts = context['ti'].xcom_pull(key=None, task_ids='create_variant_barchart_task')
 
     # db_path = '/home/cristi/Documents/hacktm/'
     #
@@ -88,6 +111,7 @@ def write_results_to_db(**context):
         'job_id': config['job_id'],
         'user_id': config['user_id'],
         'variants': filtered_variants,
+        'gene_counts': gene_counts,
         'pubmed': pubmed_results,
     }
 
@@ -123,8 +147,15 @@ pubmed_nlp_task = PythonOperator(
 )
 
 filtered_results_keyword_task = PythonOperator(
-    python_callable=filtered_results_keyword_search,
-    task_id='filtered_results_keyword_search',
+    python_callable=clustering_task,
+    task_id='clustering_task',
+    provide_context=True,
+    dag=dag
+)
+
+create_variant_barchart_task = PythonOperator(
+    python_callable=create_variant_barchart,
+    task_id='create_variant_barchart_task',
     provide_context=True,
     dag=dag
 )
@@ -140,4 +171,5 @@ filter_task.set_upstream(annotate_task)
 
 pubmed_nlp_task.set_upstream(filter_task)
 filtered_results_keyword_task.set_upstream(filter_task)
-db_write_task.set_upstream([pubmed_nlp_task, filtered_results_keyword_task])
+create_variant_barchart_task.set_upstream(filter_task)
+db_write_task.set_upstream([pubmed_nlp_task, filtered_results_keyword_task, create_variant_barchart_task])

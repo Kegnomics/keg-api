@@ -6,3 +6,7 @@ redis
 celery
 apache-airflow[redis]
 flask-cors
+nltk
+scipy
+sklearn
+pandas
