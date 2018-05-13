@@ -3,6 +3,11 @@ import json
 import re
 from kegapi.app import db
 from kegapi.constants import CLINVAR_GROUP_REGEX
+from operator import itemgetter
+
+
+def filter_top_genecounts(genecounts):
+    return sorted(genecounts, key=itemgetter('count'), reverse=True)[:10]
 
 
 class JobRun(db.Model):
@@ -21,6 +26,7 @@ class JobRun(db.Model):
 
     @staticmethod
     def serialize_json(obj):
+        filtered_genecounts = filter_top_genecounts([GeneCounts.serialize_json(g) for g in obj.genecounts])
         return {
             'id': obj.id,
             'runname': obj.runname,
@@ -29,7 +35,7 @@ class JobRun(db.Model):
             'done': obj.done,
             'variants': [Variant.serialize_json(v) for v in obj.variants],
             'pubmedarticles': [PubMedArticle.serialize_json(a) for a in obj.pubmedarticles],
-            'genecounts': [GeneCounts.serialize_json(obj) for obj in obj.genecounts]
+            'genecounts': filtered_genecounts
         }
 
 
