@@ -53,6 +53,8 @@ def load_pickle(filename):
     with open(filename, 'rb') as f:
         return pickle.load(f)
 
+import matplotlib
+matplotlib.use('Agg')
 
 from matplotlib import pyplot as  plt
 import numpy as np
@@ -101,10 +103,10 @@ def build_dataframes(files, out_path):
 
     print('Extracted: ')
 
-    with open('/home/cristi/Documents/hacktm/parsed_vcfs_ml.p', 'wb') as f:
-        pickle.dump(extracted_parsed_vcfs, f)
-    with open('/home/cristi/Documents/hacktm/filtered_parsed_vcfs_ml.p', 'wb') as f:
-        pickle.dump(extracted_filtered_vcfs, f)
+    # with open('parsed_vcfs_ml.p', 'wb') as f:
+    #     pickle.dump(extracted_parsed_vcfs, f)
+    # with open('filtered_parsed_vcfs_ml.p', 'wb') as f:
+    #     pickle.dump(extracted_filtered_vcfs, f)
 
     filtered_flat_parsed = flat_parse(extracted_filtered_vcfs)
     flat_parsed = flat_parse(extracted_parsed_vcfs)
