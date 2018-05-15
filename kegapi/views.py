@@ -96,21 +96,6 @@ def jobs_index():
         return jsonify({'results': all_res})
 
 
-@app.route('/api/test-trigger', methods=['GET'])
-def trigger_dag_test():
-    config = {
-        'job_id': 1,
-        'user_id': 123,
-        'file_path': '/home/cristi/Documents/hacktm/J2_S2.vcf',
-        'keywords': ['breast', 'cancer'],
-        'end_url': 'http://localhost:5000/api/end_job_run'
-    }
-
-    print(trigger_airflow_job(config))
-
-    return jsonify({'job_result': 'started'})
-
-
 @app.route('/api/stats/commonWords', methods=['GET'])
 def get_most_common_words_in_run():
     job_id = request.args.get('job_id')
@@ -142,7 +127,7 @@ def end_job_run():
     :return:
     """
 
-    request_data = json.loads(request.data)
+    request_data = json.loads(request.data.decode('utf-8'))
     job_id = request_data.get('job_id')
     user_id = request_data.get('user_id')
     pubmed_data = request_data.get('pubmed')
