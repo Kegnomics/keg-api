@@ -1,0 +1,9 @@
+export FLASK_APP=kegapi.app
+export FLASK_DEBUG=1
+
+export KEGAPI_SETTINGS=/home/darkgeeky/kegapi.cfg
+
+export WORKON_HOME=/home/darkgeeky/.venvs
+export VIRTUALENVWRAPPER_PYTHON=/usr/bin/python3
+
+source /usr/local/bin/virtualenvwrapper.sh
